@@ -269,8 +269,13 @@
             Notification.requestPermission();
         }
 
-       // checkAuth();
-    </script>
+       // A ORDEM DE PARTIDA ESTÁ AQUI:
+    window.onload = function() {
+        console.log("Iniciando DriverPro Admin...");
+        // Substitua 'init' pelo nome da função que carrega seu mapa/dados
+        // Se a sua função principal se chamar loadDashboard, use:
+        loadDashboard(); 
+    };
+</script>
 </body>
 </html>
-,,
