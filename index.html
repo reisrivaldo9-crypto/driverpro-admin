@@ -108,55 +108,87 @@
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
         const supabaseJs = window.supabase;
         const SUPABASE_URL = 'https://uzmazubryyrlkggztlov.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6bWF6dWJyeXlybGtnZ3p0bG92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTk1OTYsImV4cCI6MjA4OTc3NTU5Nn0._sixe64vtoy-Ehy-QyNgYj-0RTNXwWiM4uInMdN-5d8';
+        const SUPABASE_ANON_KEY = 'sb_publishable_CInfJWpkzonRXoRI4ggvdA_vEgg-irD';
         const ADMIN_EMAIL = 'reisrivaldo9@gmail.com';
         
         const supabaseClient = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let map, markers = {};
 
-// 1. Authentication
-async function checkAuth() {
-    console.log("Iniciando DriverPro Admin em Itabuna...");
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        console.log("Usuário detectado:", user ? user.email : "Nenhum");
+        // 1. Authentication
+        async function checkAuth() {
+            const { data: { user }, error } = await supabaseClient.auth.getUser();
+            
+            if (error) {
+                console.error("Auth error:", error);
+                return;
+            }
 
-        const overlay = document.getElementById('login-overlay');
-        if (overlay) {
-            overlay.style.display = 'none';
-            overlay.classList.add('hidden');
+            if (user && user.email === ADMIN_EMAIL) {
+                document.getElementById('login-overlay').classList.add('hidden');
+                initDashboard();
+            }
         }
 
-        initDashboard();
-    } catch (error) {
-        console.error("Erro na partida:", error);
-        document.getElementById('login-overlay').classList.add('hidden');
-    }
-}
+        // Listen for auth changes
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            const btn = document.getElementById('login-btn');
+            const errorMsg = document.getElementById('login-error');
+            const overlay = document.getElementById('login-overlay');
 
-        function setupButtons() {
-    const loginBtn = document.getElementById('login-btn');
-    if (loginBtn) {
-        loginBtn.onclick = async () => {
-            console.log("Iniciando login com Google...");
+            if (session) {
+                if (session.user.email === ADMIN_EMAIL) {
+                    overlay.classList.add('hidden');
+                    initDashboard();
+                } else {
+                    overlay.classList.remove('hidden');
+                    errorMsg.classList.remove('hidden');
+                    btn.innerText = 'Entrar com outra conta';
+                    btn.disabled = false;
+                }
+            } else {
+                overlay.classList.remove('hidden');
+                errorMsg.classList.add('hidden');
+                btn.innerText = 'Entrar com Google';
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('login-btn').onclick = async () => {
+            const btn = document.getElementById('login-btn');
+            btn.innerText = 'Entrando...';
+            btn.disabled = true;
+
             const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin }
+                options: { 
+                    redirectTo: window.location.origin + window.location.pathname 
+                }
             });
-            if (error) console.error("Erro no Google Login:", error.message);
-        };
-    }
 
-window.onload = function() {
-    setupButtons();
-    checkAuth();
-};
-   
+            if (error) {
+                alert("Erro ao iniciar login: " + error.message);
+                btn.innerText = 'Entrar com Google';
+                btn.disabled = false;
+            }
+        };
+
+        // 2. Initialization
+        let isInitialized = false;
+        async function initDashboard() {
+            if (isInitialized) return;
+            isInitialized = true;
+            
+            map = L.map('map', { zoomControl: false }).setView([-15.7801, -47.9292], 4);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+            loadInitialData();
+            setupRealtime();
+        }
+
         async function loadInitialData() {
             // Fetch Locations
             const { data: locations } = await supabaseClient.from('localizacao_tempo_real').select('*, profiles(nome, plano)');
@@ -260,57 +292,29 @@ window.onload = function() {
         };
 
         function notifyEmergency(emergency) {
-            // 1. Authentication
-async function checkAuth() {
-    console.log("Iniciando DriverPro Admin em Itabuna...");
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        
-        // FORÇA A TELA A SUMIR
-        const overlay = document.getElementById('login-overlay');
-        if (overlay) {
-            overlay.style.display = 'none';
-            overlay.classList.add('hidden');
+            if (Notification.permission === "granted") {
+                new Notification("🚨 EMERGÊNCIA DRIVERPRO", {
+                    body: `Novo alerta de ${emergency.tipo} detectado!`,
+                    icon: "/icon.png"
+                });
+            }
+            // Alert sound
+            const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+            audio.play();
         }
 
-// 1. Authentication
-async function checkAuth() {
-    console.log("Iniciando DriverPro Admin em Itabuna...");
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        
-        const overlay = document.getElementById('login-overlay');
-        if (overlay) {
-            overlay.style.display = 'none';
-            overlay.classList.add('hidden');
+        function updateStats() {
+            const activeEmergencies = Object.values(markers).filter(m => m.options.fillColor === 'red').length;
+            document.getElementById('stat-emergencies').innerText = activeEmergencies;
+            document.getElementById('stat-active').innerText = Object.keys(markers).length;
         }
 
-        initDashboard();
-    } catch (error) {
-        console.error("Erro na partida:", error);
-    }
-}
+        // Request notification permission
+        if (Notification.permission !== "denied") {
+            Notification.requestPermission();
+        }
 
-function setupButtons() {
-    const btn = document.getElementById('login-btn'); 
-    if (btn) {
-        btn.onclick = async () => {
-            console.log("Botão clicado! Google Login...");
-            await supabaseClient.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.origin }
-            });
-        };
-    }
-
-window.onload = function() {
-    console.log("Iniciando DriverPro Admin em Itabuna...");
-
-    if (typeof setupButtons === "function") {
-        setupButtons();
-    }
-
-    if (typeof checkAuth === "function") {
         checkAuth();
-    }
-};
+    </script>
+</body>
+</html>
