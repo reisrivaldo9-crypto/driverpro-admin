@@ -117,24 +117,33 @@
         
         const supabaseClient = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
-                flowType: 'implicit'
+                flowType: 'implicit',
+                detectSessionInUrl: true,
+                persistSession: true,
+                storage: window.localStorage
             }
         });
         let map, markers = {};
 
         // 1. Authentication & Session Recovery
         (async () => {
+            console.log('0. Iniciando fluxo de autenticação...');
+            
+            console.log('0.1. Configurando onAuthStateChange...');
             // Listen for auth changes BEFORE checkAuth
             supabaseClient.auth.onAuthStateChange((event, session) => {
+                console.log('Auth event:', event, session ? 'Session active' : 'No session');
                 const btn = document.getElementById('login-btn');
                 const errorMsg = document.getElementById('login-error');
                 const overlay = document.getElementById('login-overlay');
 
                 if (session) {
                     if (session.user.email === ADMIN_EMAIL) {
+                        console.log('Auth: Admin logado via event');
                         overlay.classList.add('hidden');
                         initDashboard();
                     } else {
+                        console.log('Auth: Email não autorizado via event');
                         overlay.classList.remove('hidden');
                         errorMsg.classList.remove('hidden');
                         if (btn) {
@@ -157,16 +166,23 @@
         })();
 
         async function checkAuth() {
+            console.log('Checking current user...');
             const { data: { user }, error } = await supabaseClient.auth.getUser();
             
             if (error) {
-                console.error("Auth error:", error);
+                console.error("Auth error in checkAuth:", error);
                 return;
             }
 
-            if (user && user.email === ADMIN_EMAIL) {
-                document.getElementById('login-overlay').classList.add('hidden');
-                initDashboard();
+            if (user) {
+                console.log('User found in checkAuth:', user.email);
+                if (user.email === ADMIN_EMAIL) {
+                    console.log('Auth: Admin logado via checkAuth');
+                    document.getElementById('login-overlay').classList.add('hidden');
+                    initDashboard();
+                }
+            } else {
+                console.log('No user found in checkAuth');
             }
         }
 
