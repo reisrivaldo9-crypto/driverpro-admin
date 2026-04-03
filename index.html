@@ -118,7 +118,52 @@
         const supabaseClient = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let map, markers = {};
 
-        // 1. Authentication
+        // 1. Authentication & Session Recovery
+        (async () => {
+            // Recover session from URL after Google redirect
+            const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+
+            if (!session) {
+                // Try to exchange code for session (PKCE flow)
+                const url = new URL(window.location.href);
+                const code = url.searchParams.get("code");
+                if (code) {
+                    await supabaseClient.auth.exchangeCodeForSession(code);
+                }
+            }
+
+            // Listen for auth changes BEFORE checkAuth
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                const btn = document.getElementById('login-btn');
+                const errorMsg = document.getElementById('login-error');
+                const overlay = document.getElementById('login-overlay');
+
+                if (session) {
+                    if (session.user.email === ADMIN_EMAIL) {
+                        overlay.classList.add('hidden');
+                        initDashboard();
+                    } else {
+                        overlay.classList.remove('hidden');
+                        errorMsg.classList.remove('hidden');
+                        if (btn) {
+                            btn.innerText = 'Entrar com outra conta';
+                            btn.disabled = false;
+                        }
+                    }
+                } else {
+                    if (overlay) overlay.classList.remove('hidden');
+                    if (errorMsg) errorMsg.classList.add('hidden');
+                    if (btn) {
+                        btn.innerText = 'Entrar com Google';
+                        btn.disabled = false;
+                    }
+                }
+            });
+
+            // Initial check
+            await checkAuth();
+        })();
+
         async function checkAuth() {
             const { data: { user }, error } = await supabaseClient.auth.getUser();
             
@@ -132,30 +177,6 @@
                 initDashboard();
             }
         }
-
-        // Listen for auth changes
-        supabaseClient.auth.onAuthStateChange((event, session) => {
-            const btn = document.getElementById('login-btn');
-            const errorMsg = document.getElementById('login-error');
-            const overlay = document.getElementById('login-overlay');
-
-            if (session) {
-                if (session.user.email === ADMIN_EMAIL) {
-                    overlay.classList.add('hidden');
-                    initDashboard();
-                } else {
-                    overlay.classList.remove('hidden');
-                    errorMsg.classList.remove('hidden');
-                    btn.innerText = 'Entrar com outra conta';
-                    btn.disabled = false;
-                }
-            } else {
-                overlay.classList.remove('hidden');
-                errorMsg.classList.add('hidden');
-                btn.innerText = 'Entrar com Google';
-                btn.disabled = false;
-            }
-        });
 
         document.getElementById('login-btn').onclick = async () => {
             const btn = document.getElementById('login-btn');
@@ -313,8 +334,6 @@
         if (Notification.permission !== "denied") {
             Notification.requestPermission();
         }
-
-        checkAuth();
     </script>
 </body>
 </html>
