@@ -33,11 +33,11 @@
 
     <script>
         const supabaseJs = window.supabase;
-        // Configuração Supabase
+        // Supabase Configuration
         const SUPABASE_URL = 'https://uzmazubryyrlkggztlov.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_CInfJWpkzonRXoRI4ggvdA_vEgg-irD';
         
-        // Pegar Token da URL: driverpro.app/emergencia/{token}
+        // Get Token from URL: driverpro.app/emergencia/{token}
         const token = window.location.pathname.split('/').pop();
 
         const supabaseClient = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -49,7 +49,7 @@
         let map, marker, lastUpdateTime;
 
         async function init() {
-            // 1. Buscar Perfil pelo Token
+            // 1. Fetch Profile by Token
             const { data: profile, error: pError } = await supabaseClient
                 .from('profiles')
                 .select('user_id, nome')
@@ -63,8 +63,8 @@
 
             document.getElementById('driver-name').innerText = profile.nome;
 
-            // 2. Buscar Localização Inicial
-            const { data: loc, error: lError } = await supabase
+            // 2. Fetch Initial Location
+            const { data: loc, error: lError } = await supabaseClient
                 .from('localizacao_tempo_real')
                 .select('*')
                 .eq('user_id', profile.user_id)
