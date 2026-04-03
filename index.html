@@ -121,8 +121,27 @@
 
         // 1. Authentication
         async function checkAuth() {
-    console.log("Checando autorização...");
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    console.log("Iniciando DriverPro Admin em Itabuna...");
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        console.log("Usuário detectado:", user ? user.email : "Nenhum");
+
+        // ESTE É O COMANDO QUE TIRA O "AGUARDE" DA TELA
+        const overlay = document.getElementById('login-overlay');
+        if (overlay) {
+            overlay.style.display = 'none'; 
+            overlay.classList.add('hidden');
+        }
+
+        // CHAMA O MAPA E OS DADOS
+        initDashboard();
+
+    } catch (error) {
+        console.error("Erro na partida do sistema:", error);
+        // Mesmo com erro, tentamos mostrar o painel
+        document.getElementById('login-overlay').classList.add('hidden');
+    }
+}
     
     // FORÇAR A ENTRADA (Mesmo se o e-mail ou o banco derem erro)
     document.getElementById('login-overlay').classList.add('hidden');
