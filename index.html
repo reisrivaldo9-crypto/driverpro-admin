@@ -267,35 +267,28 @@
         };
 
         function notifyEmergency(emergency) {
-            if (Notification.permission === "granted") {
-                new Notification("🚨 EMERGÊNCIA DRIVERPRO", {
-                    body: `Novo alerta de ${emergency.tipo} detectado!`,
-                    icon: "/icon.png"
-                });
-            }
-            // Alert sound
-            const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
-            audio.play();
+            // 1. Authentication
+async function checkAuth() {
+    console.log("Iniciando DriverPro Admin em Itabuna...");
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        // FORÇA A TELA A SUMIR
+        const overlay = document.getElementById('login-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.classList.add('hidden');
         }
 
-        function updateStats() {
-            const activeEmergencies = Object.values(markers).filter(m => m.options.fillColor === 'red').length;
-            document.getElementById('stat-emergencies').innerText = activeEmergencies;
-            document.getElementById('stat-active').innerText = Object.keys(markers).length;
-        }
+        initDashboard();
+    } catch (error) {
+        console.error("Erro na partida:", error);
+        document.getElementById('login-overlay').classList.add('hidden');
+    }
+}
 
-        // Request notification permission
-        if (Notification.permission !== "denied") {
-            Notification.requestPermission();
-        }
-
-       // A ORDEM DE PARTIDA ESTÁ AQUI:
-    window.onload = function() {
-        console.log("Iniciando DriverPro Admin em Itabuna...");
-        // Substitua 'init' pelo nome da função que carrega seu mapa/dados
-        // Se a sua função principal se chamar loadDashboard, use:
-        initDashboard(); 
-    };
-</script>
-</body>
-</html>
+// 2. Gatilho de Inicialização (Linha 294 em diante)
+window.onload = function() {
+    console.log("Iniciando DriverPro Admin...");
+    checkAuth();
+};
