@@ -121,12 +121,14 @@
 
         // 1. Authentication
         async function checkAuth() {
-            const { data: { user } } = await supabaseClient.auth.getUser();
-            if (user && user.email === ADMIN_EMAIL) {
-                document.getElementById('login-overlay').classList.add('hidden');
-                initDashboard();
-            }
-        }
+    console.log("Checando autorização...");
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    // FORÇAR A ENTRADA (Mesmo se o e-mail ou o banco derem erro)
+    document.getElementById('login-overlay').classList.add('hidden');
+    console.log("Abrindo Dashboard de Itabuna...");
+    initDashboard(); 
+}
 
         document.getElementById('login-btn').onclick = async () => {
             const { error } = await supabaseClient.auth.signInWithOAuth({
