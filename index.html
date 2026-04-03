@@ -184,32 +184,54 @@
         async function initDashboard() {
             if (isInitialized) return;
             isInitialized = true;
+            console.log('1. initDashboard iniciado');
             
-            map = L.map('map', { zoomControl: false }).setView([-15.7801, -47.9292], 4);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+            try {
+                console.log('2. Inicializando mapa...');
+                map = L.map('map').setView([-15.7801, -47.9292], 5);
+                console.log('3. Mapa criado');
 
-            loadInitialData();
-            setupRealtime();
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+                 .addTo(map);
+                console.log('4. Tiles adicionados');
+
+                console.log('5. Buscando dados do Supabase...');
+                await loadDashboardData();
+                console.log('6. Dados carregados');
+
+                setupRealtime();
+                console.log('7. Realtime configurado');
+            } catch (err) {
+                console.error('Erro no initDashboard:', err);
+            }
         }
 
-        async function loadInitialData() {
-            // Fetch Locations
-            const { data: locations } = await supabaseClient.from('localizacao_tempo_real').select('*, profiles(nome, plano)');
-            locations?.forEach(updateMarker);
+        async function loadDashboardData() {
+            try {
+                // Fetch Locations
+                const { data: locations, error: locError } = await supabaseClient.from('localizacao_tempo_real').select('*, profiles(nome, plano)');
+                if (locError) throw locError;
+                locations?.forEach(updateMarker);
 
-            // Fetch Plan Stats
-            const { data: profiles } = await supabaseClient.from('profiles').select('plano');
-            const counts = profiles.reduce((acc, p) => {
-                acc[p.plano] = (acc[p.plano] || 0) + 1;
-                return acc;
-            }, {});
-            document.getElementById('plan-gratis').innerText = counts.gratis || 0;
-            document.getElementById('plan-pro').innerText = counts.pro || 0;
-            document.getElementById('plan-elite').innerText = counts.elite || 0;
+                // Fetch Plan Stats
+                const { data: profiles, error: profError } = await supabaseClient.from('profiles').select('plano');
+                if (profError) throw profError;
+                
+                const counts = (profiles || []).reduce((acc, p) => {
+                    acc[p.plano] = (acc[p.plano] || 0) + 1;
+                    return acc;
+                }, {});
+                document.getElementById('plan-gratis').innerText = counts.gratis || 0;
+                document.getElementById('plan-pro').innerText = counts.pro || 0;
+                document.getElementById('plan-elite').innerText = counts.elite || 0;
 
-            // Fetch Cities / Feature Flags
-            const { data: flags } = await supabaseClient.from('feature_flags').select('*');
-            renderCityList(flags);
+                // Fetch Cities / Feature Flags
+                const { data: flags, error: flagError } = await supabaseClient.from('feature_flags').select('*');
+                if (flagError) throw flagError;
+                renderCityList(flags);
+            } catch (err) {
+                console.error('Erro ao carregar dados iniciais:', err);
+            }
         }
 
         function setupRealtime() {
@@ -263,7 +285,7 @@
 
         async function toggleMesh(id, current) {
             await supabaseClient.from('feature_flags').update({ mesh_ativo: !current }).eq('id', id);
-            loadInitialData(); // Refresh
+            loadDashboardData(); // Refresh
         }
 
         async function sendBroadcast(message, type) {
