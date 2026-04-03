@@ -119,51 +119,44 @@
         const supabaseClient = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let map, markers = {};
 
-        // 1. Authentication
-        async function checkAuth() {
+// 1. Authentication
+async function checkAuth() {
     console.log("Iniciando DriverPro Admin em Itabuna...");
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         console.log("Usuário detectado:", user ? user.email : "Nenhum");
 
-        // ESTE É O COMANDO QUE TIRA O "AGUARDE" DA TELA
         const overlay = document.getElementById('login-overlay');
         if (overlay) {
-            overlay.style.display = 'none'; 
+            overlay.style.display = 'none';
             overlay.classList.add('hidden');
         }
 
-        // CHAMA O MAPA E OS DADOS
         initDashboard();
-
     } catch (error) {
-        console.error("Erro na partida do sistema:", error);
-        // Mesmo com erro, tentamos mostrar o painel
+        console.error("Erro na partida:", error);
         document.getElementById('login-overlay').classList.add('hidden');
     }
-    
-    // FORÇAR A ENTRADA (Mesmo se o e-mail ou o banco derem erro)
-    document.getElementById('login-overlay').classList.add('hidden');
-    console.log("Abrindo Dashboard de Itabuna...");
-    initDashboard(); 
 }
 
-        document.getElementById('login-btn').onclick = async () => {
+        function setupButtons() {
+    const loginBtn = document.getElementById('login-btn');
+    if (loginBtn) {
+        loginBtn.onclick = async () => {
+            console.log("Iniciando login com Google...");
             const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.href }
+                options: { redirectTo: window.location.origin }
             });
+            if (error) console.error("Erro no Google Login:", error.message);
         };
+    }
 
-        // 2. Initialization
-        async function initDashboard() {
-            map = L.map('map', { zoomControl: false }).setView([-15.7801, -47.9292], 4);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-            loadInitialData();
-            setupRealtime();
-        }
-
+window.onload = function() {
+    setupButtons();
+    checkAuth();
+};
+   
         async function loadInitialData() {
             // Fetch Locations
             const { data: locations } = await supabaseClient.from('localizacao_tempo_real').select('*, profiles(nome, plano)');
@@ -280,15 +273,45 @@ async function checkAuth() {
             overlay.classList.add('hidden');
         }
 
+// 1. Authentication
+async function checkAuth() {
+    console.log("Iniciando DriverPro Admin em Itabuna...");
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        
+        const overlay = document.getElementById('login-overlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+            overlay.classList.add('hidden');
+        }
+
         initDashboard();
     } catch (error) {
         console.error("Erro na partida:", error);
-        document.getElementById('login-overlay').classList.add('hidden');
     }
 }
 
-// 2. Gatilho de Inicialização (Linha 294 em diante)
+function setupButtons() {
+    const btn = document.getElementById('login-btn'); 
+    if (btn) {
+        btn.onclick = async () => {
+            console.log("Botão clicado! Google Login...");
+            await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin }
+            });
+        };
+    }
+}
+
 window.onload = function() {
-    console.log("Iniciando DriverPro Admin...");
-    checkAuth();
+    console.log("Iniciando DriverPro Admin em Itabuna...");
+
+    if (typeof setupButtons === "functionn") {
+        setupButtons();
+    }
+
+    if (typeof checkAuth === "function") {
+        checkAuth === "function") {
+    }
 };
