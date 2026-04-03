@@ -274,7 +274,7 @@ async function checkAuth() {
         const { data: { user } } = await supabaseClient.auth.getUser();
         
         // FORÇA A TELA A SUMIR
-        const overlay = document.getElementById('login-btn');
+        const overlay = document.getElementById('login-overlay');
         if (overlay) {
             overlay.style.display = 'none';
             overlay.classList.add('hidden');
@@ -283,7 +283,7 @@ async function checkAuth() {
         initDashboard();
     } catch (error) {
         console.error("Erro na partida:", error);
-        document.getElementById('login-btn').classList.add('hidden');
+        document.getElementById('login-overlay').classList.add('hidden');
     }
 }
 
