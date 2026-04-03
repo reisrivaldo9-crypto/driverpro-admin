@@ -115,23 +115,15 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_CInfJWpkzonRXoRI4ggvdA_vEgg-irD';
         const ADMIN_EMAIL = 'reisrivaldo9@gmail.com';
         
-        const supabaseClient = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                flowType: 'implicit'
+            }
+        });
         let map, markers = {};
 
         // 1. Authentication & Session Recovery
         (async () => {
-            // Recover session from URL after Google redirect
-            const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-
-            if (!session) {
-                // Try to exchange code for session (PKCE flow)
-                const url = new URL(window.location.href);
-                const code = url.searchParams.get("code");
-                if (code) {
-                    await supabaseClient.auth.exchangeCodeForSession(code);
-                }
-            }
-
             // Listen for auth changes BEFORE checkAuth
             supabaseClient.auth.onAuthStateChange((event, session) => {
                 const btn = document.getElementById('login-btn');
@@ -179,22 +171,12 @@
         }
 
         document.getElementById('login-btn').onclick = async () => {
-            const btn = document.getElementById('login-btn');
-            btn.innerText = 'Entrando...';
-            btn.disabled = true;
-
-            const { error } = await supabaseClient.auth.signInWithOAuth({
+            await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
                 options: { 
-                    redirectTo: window.location.origin + window.location.pathname 
+                    redirectTo: 'https://driverpro-admin.vercel.app/admin.html'
                 }
             });
-
-            if (error) {
-                alert("Erro ao iniciar login: " + error.message);
-                btn.innerText = 'Entrar com Google';
-                btn.disabled = false;
-            }
         };
 
         // 2. Initialization
