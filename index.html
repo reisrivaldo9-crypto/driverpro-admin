@@ -166,6 +166,16 @@
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 console.log('Session from getSession:', session ? 'Found' : 'Not found');
+                
+                // Verificar se há hash na URL (implicit flow)
+                if (window.location.hash.includes('access_token')) {
+                    console.log('Hash com access_token detectado!');
+                    if (session && session.user.email === ADMIN_EMAIL) {
+                        console.log('Sessão válida encontrada no hash, escondendo overlay...');
+                        document.getElementById('login-overlay').classList.add('hidden');
+                        initDashboard();
+                    }
+                }
             } catch (err) {
                 console.log('Nenhuma sessão encontrada no URL (normal)');
             }
